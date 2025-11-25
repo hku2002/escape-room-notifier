@@ -1,122 +1,150 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+이 파일은 Claude Code (claude.ai/code)가 이 저장소에서 작업할 때 필요한 가이드를 제공합니다.
 
-## Project Overview
+## 프로젝트 개요
 
-This is a Spring Boot application for monitoring escape room reservation availability and sending notifications to users when desired time slots become available. The service crawls escape room booking websites, compares availability against user preferences, and sends real-time alerts.
+방탈출 카페의 예약 가능 여부를 모니터링하고, 원하는 시간대에 빈 자리가 생기면 사용자에게 알림을 보내는 Spring Boot 애플리케이션입니다. 방탈출 예약 사이트를 크롤링하여 예약 가능 정보를 수집하고, 사용자 설정과 비교하여 실시간 알림을 제공합니다.
 
-**Tech Stack**: Java 17, Spring Boot 3.5.9, Spring Data JPA, Spring Web, H2 Database (development), Lombok
+**기술 스택**: Java 17, Spring Boot 3.5.9, Spring Data JPA, Spring Web, H2 Database (개발용), Lombok
 
-**Base Package**: `kr.co.escape.api`
+**기본 패키지**: `kr.co.escape.api`
 
-## Common Commands
+## 자주 사용하는 명령어
 
-### Build and Run
+### 빌드 및 실행
 ```bash
-# Build the project
+# 프로젝트 빌드
 ./gradlew build
 
-# Run the application
+# 애플리케이션 실행
 ./gradlew bootRun
 
-# Run tests
+# 테스트 실행
 ./gradlew test
 
-# Run a single test class
+# 특정 테스트 클래스 실행
 ./gradlew test --tests "ClassName"
 
-# Run a single test method
+# 특정 테스트 메서드 실행
 ./gradlew test --tests "ClassName.methodName"
 
-# Clean build
+# 클린 빌드
 ./gradlew clean build
 ```
 
-### Development
+### 개발
 ```bash
-# Check for dependency updates
+# 의존성 업데이트 확인
 ./gradlew dependencyUpdates
 
-# Generate project reports
+# 프로젝트 리포트 생성
 ./gradlew check
 ```
 
-## Architecture
+### H2 데이터베이스 접근
+애플리케이션 실행 후 http://localhost:8080/h2-console 접속
+- JDBC URL: `jdbc:h2:mem:escaperoom`
+- Username: `sa`
+- Password: (공백)
 
-### System Components
+**중요**: 애플리케이션 테스트 후 반드시 종료할 것
+```bash
+# 8080 포트 프로세스 확인 및 종료
+lsof -ti:8080 | xargs kill -9
+```
 
-**Crawling System**: Scheduled crawlers extract reservation availability from various escape room booking platforms. Each crawler should handle dynamic web pages (JavaScript-rendered content) and respect rate limits (5-30 minute intervals).
+## 아키텍처
 
-**User Alert Management**: Users configure alerts specifying desired themes, date ranges, time slots, number of people, and notification preferences. The system matches new availability against these criteria.
+### 시스템 컴포넌트
 
-**Notification Engine**: When availability matching user criteria is detected, notifications are sent via configured channels (email, Kakao, push). Includes deduplication logic to prevent repeated alerts for the same time slot.
+**크롤링 시스템**: 다양한 방탈출 예약 플랫폼에서 예약 가능 정보를 수집하는 스케줄러 기반 크롤러입니다. JavaScript로 렌더링되는 동적 웹페이지를 처리하고, 5-30분 간격의 Rate Limit을 준수해야 합니다.
 
-**Data Comparison Engine**: Compares newly crawled availability data against previous state to detect changes. Uses Redis for caching and preventing duplicate notifications.
+**사용자 알림 관리**: 사용자가 원하는 테마, 날짜 범위, 시간대, 인원 수, 알림 방식을 설정합니다. 시스템은 새로운 예약 가능 정보를 이 조건과 비교하여 일치 여부를 확인합니다.
 
-### Database Schema
+**알림 엔진**: 사용자 조건과 일치하는 예약 가능 정보가 발견되면, 설정된 채널(이메일, 카카오톡, 푸시)을 통해 알림을 발송합니다. 동일한 시간대에 대한 중복 알림을 방지하는 로직을 포함합니다.
 
-Key entities:
-- **users**: User accounts with notification preferences
-- **themes**: Escape room theme metadata (cafe name, theme name, branch, difficulty, genre, duration, price)
-- **user_alerts**: User-configured alert criteria (theme, date range, preferred times, people count, active status)
-- **availability**: Crawled reservation slots (theme, date, time slot, availability status, crawl timestamp)
-- **notifications**: Notification history (user, alert, availability, sent timestamp, type, status)
+**데이터 비교 엔진**: 새로 크롤링한 예약 가능 정보를 이전 상태와 비교하여 변경사항을 감지합니다. Redis를 사용하여 캐싱하고 중복 알림을 방지합니다.
 
-### Key Design Considerations
+### 데이터베이스 스키마
 
-**Crawling Strategy**:
-- Use Selenium/Playwright for JavaScript-heavy sites, Jsoup for static HTML
-- Implement retry logic for failed crawls with exponential backoff
-- Respect robots.txt and implement User-Agent rotation if needed
-- Handle CAPTCHA scenarios gracefully
+현재 구현된 Entity:
+- **User** (`kr.co.escape.api.entity.User`): 사용자 계정 및 알림 설정
+- **Theme** (`kr.co.escape.api.entity.Theme`): 방탈출 테마 정보 (카페명, 테마명, 지점, 난이도, 장르, 소요시간, 가격)
+- **UserAlert** (`kr.co.escape.api.entity.UserAlert`): 사용자 알림 설정 (테마, 날짜 범위, 선호 시간대, 인원 수, 활성화 상태)
+- **Availability** (`kr.co.escape.api.entity.Availability`): 크롤링한 예약 가능 시간대 (테마, 날짜, 시간, 예약 가능 여부, 크롤링 시간)
+- **Notifications** (`kr.co.escape.api.entity.Notification`): 알림 히스토리 (사용자, 알림 설정, 예약 가능 정보, 발송 시간, 알림 타입, 상태)
 
-**Performance**:
-- Use Spring WebFlux for async/reactive crawling operations
-- Cache frequently accessed data in Redis
-- Batch database operations where possible
-- Consider multi-threading for parallel site crawling
+주요 연관관계:
+- User ↔ UserAlert (1:N)
+- User ↔ Notification (1:N)
+- Theme ↔ UserAlert (1:N)
+- Theme ↔ Availability (1:N)
+- UserAlert ↔ Notification (1:N)
+- Availability ↔ Notification (1:N)
 
-**Notification Deduplication**:
-- Redis stores sent notification keys (user_id + theme_id + datetime)
-- TTL-based expiration for notification tracking
-- Prevent same slot notification within configurable window
+### 주요 설계 고려사항
 
-**Extensibility**:
-- Abstract crawler interface for easy addition of new booking platforms
-- Plugin-style notification channels
-- Configurable crawling schedules per site
+**크롤링 전략**:
+- JavaScript 기반 사이트는 Selenium/Playwright 사용, 정적 HTML은 Jsoup 사용
+- 크롤링 실패 시 exponential backoff를 사용한 재시도 로직 구현
+- robots.txt 준수 및 필요시 User-Agent 로테이션 구현
+- CAPTCHA 처리 전략 필요
 
-## Development Guidelines
+**성능 최적화**:
+- 비동기/반응형 크롤링 작업을 위해 Spring WebFlux 사용
+- 자주 조회되는 데이터는 Redis에 캐싱
+- 가능한 경우 데이터베이스 배치 작업 수행
+- 여러 사이트 병렬 크롤링을 위한 멀티스레딩 고려
 
-**Entity Relationships**: Use JPA bidirectional relationships carefully. User ↔ UserAlert and Theme ↔ Availability are key relationships. Consider fetch strategies (LAZY vs EAGER) for performance.
+**알림 중복 방지**:
+- Redis에 발송된 알림 키 저장 (user_id + theme_id + datetime)
+- TTL 기반 만료로 알림 추적 관리
+- 설정 가능한 시간 내 동일 시간대 재알림 방지
 
-**Scheduler Configuration**: Use `@Scheduled` annotations for crawlers. Configure cron expressions in application.properties for different crawling intervals per site.
+**확장성**:
+- 새로운 예약 플랫폼 추가를 위한 추상 크롤러 인터페이스 설계
+- 플러그인 방식의 알림 채널 구조
+- 사이트별 크롤링 스케줄 설정 가능
 
-**Error Handling**: Crawling failures should log errors but not crash the application. Implement circuit breaker pattern for repeatedly failing sites.
+## 개발 가이드라인
 
-**Testing**: Write integration tests for crawlers using mocked HTTP responses. Test notification logic with test channels before production deployment.
+**Entity 연관관계**: JPA 양방향 관계를 신중하게 사용하세요. User ↔ UserAlert, Theme ↔ Availability가 주요 관계입니다. 성능을 위해 Fetch 전략(LAZY vs EAGER)을 고려하세요.
 
-## Configuration
+**스케줄러 설정**: 크롤러에 `@Scheduled` 어노테이션을 사용하세요. application.yml에서 사이트별로 다른 크롤링 간격을 위한 cron 표현식을 설정하세요.
 
-Application properties should include:
-- Database connection settings (MariaDB/MySQL for production, H2 for dev)
-- Redis configuration for caching
-- SMTP settings for email notifications
-- Kakao API credentials
-- Crawler user-agent and timeout settings
-- Rate limiting parameters
+**에러 처리**: 크롤링 실패는 로그를 남기되 애플리케이션을 중단시키지 않아야 합니다. 반복적으로 실패하는 사이트에 대해 Circuit Breaker 패턴을 구현하세요.
 
-## Legal and Ethical Considerations
+**테스트**: Mock HTTP 응답을 사용한 크롤러 통합 테스트를 작성하세요. 프로덕션 배포 전에 테스트 채널로 알림 로직을 검증하세요.
 
-**Crawling Compliance**:
-- Always check robots.txt before crawling
-- Implement rate limiting to avoid server overload
-- Do not circumvent access controls
-- Verify each site's terms of service permit crawling
+## 설정
 
-**Data Privacy**:
-- Encrypt user passwords using BCrypt
-- Secure storage of notification preferences
-- HTTPS required for all external communications
-- Handle user data per GDPR/local privacy laws
+`src/main/resources/application.yml`에 다음 설정이 포함되어야 합니다:
+
+**현재 설정**:
+- H2 in-memory 데이터베이스 (개발용)
+- H2 Console 활성화 (/h2-console)
+- JPA ddl-auto: create-drop (개발 모드)
+- SQL 로깅 활성화
+
+**향후 필요한 설정**:
+- 프로덕션 데이터베이스 연결 (MariaDB/MySQL)
+- Redis 캐싱 설정
+- SMTP 이메일 설정
+- 카카오톡 API 인증 정보
+- 크롤러 User-Agent 및 타임아웃 설정
+- Rate Limiting 파라미터
+
+## 법적/윤리적 고려사항
+
+**크롤링 준수사항**:
+- 크롤링 전 반드시 robots.txt 확인
+- 서버 과부하 방지를 위한 Rate Limiting 구현
+- 접근 제어를 우회하지 말 것
+- 각 사이트의 이용약관에서 크롤링 허용 여부 확인
+
+**데이터 프라이버시**:
+- BCrypt를 사용한 사용자 비밀번호 암호화
+- 알림 설정 정보의 안전한 저장
+- 모든 외부 통신에 HTTPS 필수
+- GDPR/국내 개인정보보호법 준수
