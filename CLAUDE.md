@@ -4,9 +4,15 @@
 
 ## 프로젝트 개요
 
-방탈출 카페의 예약 가능 여부를 모니터링하고, 원하는 시간대에 빈 자리가 생기면 사용자에게 알림을 보내는 Spring Boot 애플리케이션입니다. 방탈출 예약 사이트를 크롤링하여 예약 가능 정보를 수집하고, 사용자 설정과 비교하여 실시간 알림을 제공합니다.
+방탈출 카페의 예약 가능 여부를 모니터링하고, 원하는 시간대에 빈 자리가 생기면 사용자에게 알림을 보내는 풀스택 웹 애플리케이션입니다. 방탈출 예약 사이트를 크롤링하여 예약 가능 정보를 수집하고, 사용자 설정과 비교하여 실시간 알림을 제공합니다.
 
-**기술 스택**: Java 17, Spring Boot 3.5.9, Spring Data JPA, Spring Web, H2 Database (개발용), Lombok
+**기술 스택**:
+- Backend: Java 17, Spring Boot 3.5.9, Spring Data JPA, Spring Web, H2 Database (개발용), Lombok
+- Frontend: React 18, TypeScript, Vite 7
+
+**프로젝트 구조**:
+- `/src` - 백엔드 소스 코드 (Spring Boot)
+- `/frontend` - 프론트엔드 소스 코드 (React + Vite)
 
 **기본 패키지**: `kr.co.escape.api`
 
@@ -41,6 +47,38 @@
 # 프로젝트 리포트 생성
 ./gradlew check
 ```
+
+### 프론트엔드 (React + Vite)
+```bash
+# 프론트엔드 디렉토리로 이동
+cd frontend
+
+# 의존성 설치 (최초 1회)
+npm install
+
+# 개발 서버 실행 (포트: 5173)
+npm run dev
+
+# 프로덕션 빌드
+npm run build
+
+# 빌드 결과 미리보기
+npm run preview
+```
+
+### 전체 애플리케이션 실행 (개발 모드)
+```bash
+# 터미널 1: 백엔드 실행
+./gradlew bootRun
+
+# 터미널 2: 프론트엔드 실행
+cd frontend && npm run dev
+```
+
+**개발 서버 URL**:
+- 백엔드: http://localhost:8080
+- 프론트엔드: http://localhost:5173
+- H2 Console: http://localhost:8080/h2-console
 
 ### H2 데이터베이스 접근
 애플리케이션 실행 후 http://localhost:8080/h2-console 접속
