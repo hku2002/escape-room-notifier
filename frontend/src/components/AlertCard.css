@@ -1,130 +1,114 @@
 .alert-card {
-  border: 1px solid #e0e0e0;
+  background: white;
   border-radius: 12px;
   padding: 20px;
-  margin-bottom: 16px;
-  background-color: #ffffff;
-  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .alert-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
-}
-
-.alert-card.active {
-  background-color: #f0f8ff;
-  border-color: #4a90e2;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 .alert-card.inactive {
-  background-color: #f5f5f5;
-  border-color: #d0d0d0;
-  opacity: 0.8;
+  opacity: 0.7;
+  background: #f9f9f9;
 }
 
 .alert-header {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  justify-content: flex-end;
   margin-bottom: 12px;
 }
 
-.status-icon {
-  font-size: 20px;
-}
-
-.status-text {
-  font-size: 14px;
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
   font-weight: 600;
-  color: #666;
 }
 
-.alert-card.active .status-text {
-  color: #4a90e2;
+.status-badge.active {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-badge.inactive {
+  background: #ffebee;
+  color: #c62828;
 }
 
 .theme-name {
   font-size: 20px;
   font-weight: 700;
-  color: #333;
   margin: 0 0 8px 0;
+  color: #1a1a1a;
 }
 
 .cafe-info {
   font-size: 14px;
   color: #666;
-  margin: 0 0 16px 0;
+  margin: 0 0 20px 0;
 }
 
 .alert-details {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .detail-row {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
   font-size: 14px;
+  color: #666;
+  font-weight: 500;
 }
 
-.detail-row .icon {
-  font-size: 16px;
-}
-
-.detail-row .text {
-  color: #555;
+.detail-value {
+  font-size: 14px;
+  color: #1a1a1a;
+  font-weight: 600;
 }
 
 .alert-actions {
   display: flex;
   gap: 8px;
-  justify-content: flex-end;
 }
 
 .alert-actions button {
-  padding: 8px 16px;
+  flex: 1;
+  padding: 10px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s;
 }
 
 .btn-secondary {
-  background-color: #e0e0e0;
+  background: #f5f5f5;
   color: #333;
 }
 
 .btn-secondary:hover {
-  background-color: #d0d0d0;
+  background: #e0e0e0;
 }
 
 .btn-danger {
-  background-color: #ff4757;
-  color: white;
+  background: #ffebee;
+  color: #c62828;
 }
 
 .btn-danger:hover {
-  background-color: #ee5a6f;
-}
-
-/* 반응형 디자인 */
-@media (max-width: 768px) {
-  .alert-card {
-    padding: 16px;
-  }
-
-  .theme-name {
-    font-size: 18px;
-  }
-
-  .alert-actions button {
-    flex: 1;
-    padding: 10px;
-  }
+  background: #ffcdd2;
 }

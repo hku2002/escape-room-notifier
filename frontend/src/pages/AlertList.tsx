@@ -1,8 +1,35 @@
 import { FC, useEffect, useState } from 'react';
 import { getUserAlerts } from '../services/api';
-import { UserAlert } from '../types/alert';
+// import { UserAlert } from '../types/alert.ts';
 import AlertCard from '../components/AlertCard';
 import './AlertList.css';
+
+export interface Theme {
+  themeId: number;
+  themeName: string;
+  cafeName: string;
+  branchName: string;
+}
+
+export interface UserAlert {
+  alertId: number;
+  isActive: boolean;
+  theme: Theme;
+  dateStart: string;
+  dateEnd: string;
+  preferredTimes: string[];
+  preferredDays: string[];
+  numPeople: number;
+  notifiedCount: number;
+  lastNotifiedAt: string | null;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message?: string | null;
+}
+
 
 const AlertList: FC = () => {
   const [alerts, setAlerts] = useState<UserAlert[]>([]);
@@ -47,13 +74,12 @@ const AlertList: FC = () => {
     <div className="alert-list-container">
       <header className="header">
         <h1 className="title">방탈출 예약 알림</h1>
-        <button className="logout-btn">로그아웃</button>
       </header>
 
       <main className="main-content">
         <div className="list-header">
           <h2 className="section-title">
-            📋 내가 예약한 알림 ({alerts.length})
+            내가 설정한 알림 ({alerts.length})
           </h2>
         </div>
 

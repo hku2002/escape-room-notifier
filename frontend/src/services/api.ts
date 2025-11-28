@@ -1,4 +1,28 @@
-import { ApiResponse, UserAlert } from '../types/alert';
+interface Theme {
+  themeId: number;
+  themeName: string;
+  cafeName: string;
+  branchName: string;
+}
+
+interface UserAlert {
+  alertId: number;
+  isActive: boolean;
+  theme: Theme;
+  dateStart: string;
+  dateEnd: string;
+  preferredTimes: string[];
+  preferredDays: string[];
+  numPeople: number;
+  notifiedCount: number;
+  lastNotifiedAt: string | null;
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message?: string | null;
+}
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 

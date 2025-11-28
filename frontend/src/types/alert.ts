@@ -21,5 +21,5 @@ export interface UserAlert {
 export interface ApiResponse<T> {
   success: boolean;
   data: T;
-  message?: string;
+  message?: string | null;
 }
