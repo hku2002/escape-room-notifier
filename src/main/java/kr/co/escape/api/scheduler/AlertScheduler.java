@@ -25,7 +25,7 @@ public class AlertScheduler {
      * cron: 초 분 시 일 월 요일
      * "0 * * * * *" = 매 분 0초에 실행
      */
-    @Scheduled(cron = "0 * * * * *")
+    //@Scheduled(cron = "0 * * * * *")
     public void sendTestAlert() {
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         String message = String.format("alert-test [%s]", timestamp);

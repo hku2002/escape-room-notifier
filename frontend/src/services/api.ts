@@ -18,6 +18,23 @@ interface UserAlert {
   lastNotifiedAt: string | null;
 }
 
+export interface ReservationRequest {
+  themeId: string;
+  reservationDate: string;
+  timeSlot?: string;
+  name: string;
+  phone: string;
+  people: number;
+  paymentType: string;
+  policy: boolean;
+}
+
+export interface ReservationResponse {
+  success: boolean;
+  message: string;
+  reservationId: string | null;
+}
+
 interface ApiResponse<T> {
   success: boolean;
   data: T;
@@ -43,6 +60,33 @@ export const getUserAlerts = async (): Promise<UserAlert[]> => {
     return result.data;
   } catch (error) {
     console.error('Error fetching user alerts:', error);
+    throw error;
+  }
+};
+
+export const createReservation = async (request: ReservationRequest): Promise<ReservationResponse> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/reservations`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result: ApiResponse<ReservationResponse> = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.message || 'Failed to create reservation');
+    }
+
+    return result.data;
+  } catch (error) {
+    console.error('Error creating reservation:', error);
     throw error;
   }
 };
