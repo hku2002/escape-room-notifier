@@ -30,3 +30,9 @@ logging:
   level:
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+# Telegram Bot Configuration
+telegram:
+  bot:
+    token: "8327110992:AAHpMWarfPf_OQbweZtSd4OKhHQamMj1eJY" # TODO: 비밀정보 잘 관리하기
+    test-chat-id: "8597326233"
