@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ReservationRequest {
 
-    @Schema(description = "테마 ID (52:ALIVE, 55:사랑하는감, 57:깜방탈출, 59:NOX, 51:층간소음)", example = "57")
+    @Schema(description = "테마 ID - 주중(월~목): 51:ALIVE, 54:사랑하는감, 56:깜방탈출, 58:NOX, 50:층간소음 / 주말(금~일): 52:ALIVE, 55:사랑하는감, 57:깜방탈출, 59:NOX, 51:층간소음", example = "57")
     private String themeId;
 
     @Schema(description = "예약 날짜 (YYYY-MM-DD)", example = "2025-12-13")
