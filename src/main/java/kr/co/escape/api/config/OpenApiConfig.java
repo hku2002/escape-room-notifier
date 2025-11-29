@@ -20,6 +20,12 @@ public class OpenApiConfig {
                         .version("1.0.0"))
                 .servers(List.of(
                         new Server()
+                                .url("https://hku20022.cafe24.com")
+                                .description("Production Server"),
+                        new Server()
+                                .url("http://hku20022.cafe24.com")
+                                .description("Production Server (HTTP)"),
+                        new Server()
                                 .url("http://localhost:8080")
                                 .description("Local Server")
                 ));

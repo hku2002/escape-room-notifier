@@ -27,6 +27,12 @@ public class DataInitializer implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         log.info("테스트 데이터 초기화 시작...");
 
+        // 이미 데이터가 있으면 건너뛰기
+        if (userRepository.count() > 0) {
+            log.info("이미 데이터가 존재합니다. 초기화를 건너뜁니다.");
+            return;
+        }
+
         // 1. 사용자 생성
         User user1 = new User("test1@example.com", "password123", "email,kakao");
         User user2 = new User("test2@example.com", "password456", "email");
