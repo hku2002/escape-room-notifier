@@ -13,6 +13,10 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -63,11 +67,7 @@ public class ReservationService {
                         formData.add("paymentType", request.getPaymentType());
                         formData.add("policy", request.isPolicy() ? "on" : "");
                         formData.add("reservationDate", request.getReservationDate());
-                        formData.add("reservationTime", "21:30");
-
-                        if (request.getTimeSlot() != null) {
-                            formData.add("timeSlot", request.getTimeSlot());
-                        }
+                        formData.add("reservationTime", request.getReservationTime());
 
                         log.info("Sending POST request to: {}", reservationUrl);
                         log.info("CSRF Token: {}", pageData.csrfToken);
@@ -156,5 +156,25 @@ public class ReservationService {
         // 응답에서 예약 ID를 추출하는 로직
         // 실제 응답 형식에 따라 수정 필요
         return null;
+    }
+
+    /**
+     * Unix 타임스탬프를 H:i:s 형식(HH:mm:ss)으로 변환
+     * @param timestamp Unix 타임스탬프 문자열
+     * @return HH:mm:ss 형식의 시간 문자열
+     */
+    private String convertTimestampToTime(String timestamp) {
+        if (timestamp == null || timestamp.isEmpty()) {
+            throw new IllegalArgumentException("타임스탬프가 비어있습니다.");
+        }
+
+        try {
+            long epochSecond = Long.parseLong(timestamp);
+            Instant instant = Instant.ofEpochSecond(epochSecond);
+            ZonedDateTime zdt = instant.atZone(ZoneId.of("Asia/Seoul"));
+            return zdt.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("유효하지 않은 타임스탬프 형식입니다: " + timestamp, e);
+        }
     }
 }

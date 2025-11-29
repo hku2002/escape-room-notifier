@@ -12,6 +12,7 @@ public class ReservationRequest {
     private String themeId;
     private String reservationDate;
     private String timeSlot;
+    private String reservationTime;
     private String name;
     private String phone;
     private Integer people;
