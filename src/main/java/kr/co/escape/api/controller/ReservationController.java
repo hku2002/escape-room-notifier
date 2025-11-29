@@ -19,7 +19,7 @@ public class ReservationController {
 
     private final ReservationService reservationService;
 
-    @PostMapping
+    @PostMapping("/zero-world")
     public ApiResponse<ReservationResponse> createReservation(@RequestBody ReservationRequest request) {
         log.info("Reservation request received: themeId={}, date={}, name={}",
                 request.getThemeId(), request.getReservationDate(), request.getName());
