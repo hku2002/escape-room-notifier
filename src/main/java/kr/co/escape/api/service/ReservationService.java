@@ -1,5 +1,7 @@
 package kr.co.escape.api.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import kr.co.escape.api.dto.request.ReservationRequest;
 import kr.co.escape.api.dto.response.ReservationResponse;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,7 @@ import java.util.regex.Pattern;
 public class ReservationService {
 
     private final WebClient webClient;
+    private final ObjectMapper objectMapper;
     private static final String ZERO_WORLD_BASE_URL = "https://zerohongdae.com";
     private static final String RESERVATION_PATH = "/reservation";
 
@@ -37,7 +40,7 @@ public class ReservationService {
             String reservationUrl = ZERO_WORLD_BASE_URL + RESERVATION_PATH;
 
             // GET 요청으로 페이지 조회
-            String pageHtml = webClient.get()
+            ResponseData responseData = webClient.get()
                     .uri(pageUrl)
                     .header(HttpHeaders.USER_AGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
                     .header(HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
@@ -88,14 +91,30 @@ public class ReservationService {
                                 .exchangeToMono(response -> {
                                     log.info("Response status: {}", response.statusCode());
                                     log.info("Response headers: {}", response.headers().asHttpHeaders());
+
+                                    int statusCode = response.statusCode().value();
+
                                     return response.bodyToMono(String.class)
-                                            .doOnNext(body -> log.info("Response body: {}", body));
+                                            .doOnNext(body -> log.info("Response body: {}", body))
+                                            .map(body -> new ResponseData(statusCode, body));
                                 });
                     })
                     .block();
 
-            log.info("Reservation successful: {}", pageHtml);
-            return ReservationResponse.success("예약이 완료되었습니다.", extractReservationId(pageHtml));
+            // 응답이 없거나 HTTP 상태 코드가 200이 아니면 실패 처리
+            if (responseData == null) {
+                log.error("No response received from server");
+                return ReservationResponse.failure("서버로부터 응답을 받지 못했습니다.");
+            }
+
+            if (responseData.statusCode != 200) {
+                log.warn("Reservation failed with status code: {}, body: {}", responseData.statusCode, responseData.body);
+                String errorMessage = extractErrorMessage(responseData.body);
+                return ReservationResponse.failure(errorMessage);
+            }
+
+            log.info("Reservation successful: {}", responseData.body);
+            return ReservationResponse.success("예약이 완료되었습니다.", extractReservationId(responseData.body));
 
         } catch (Exception e) {
             log.error("Error making reservation", e);
@@ -117,6 +136,16 @@ public class ReservationService {
             this.html = html;
             this.cookieHeader = cookieHeader;
             this.csrfToken = csrfToken;
+        }
+    }
+
+    private static class ResponseData {
+        int statusCode;
+        String body;
+
+        ResponseData(int statusCode, String body) {
+            this.statusCode = statusCode;
+            this.body = body;
         }
     }
 
@@ -156,6 +185,24 @@ public class ReservationService {
         // 응답에서 예약 ID를 추출하는 로직
         // 실제 응답 형식에 따라 수정 필요
         return null;
+    }
+
+    /**
+     * JSON 응답에서 에러 메시지 추출
+     * @param jsonBody JSON 형태의 응답 body
+     * @return 사람이 읽을 수 있는 에러 메시지
+     */
+    private String extractErrorMessage(String jsonBody) {
+        try {
+            JsonNode jsonNode = objectMapper.readTree(jsonBody);
+            if (jsonNode.has("message")) {
+                return jsonNode.get("message").asText();
+            }
+            return "예약 실패: " + jsonBody;
+        } catch (Exception e) {
+            log.warn("Failed to parse error message from JSON: {}", jsonBody, e);
+            return "예약 실패: " + jsonBody;
+        }
     }
 
     /**
