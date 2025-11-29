@@ -113,12 +113,36 @@ const ZeroWorldReservation: FC = () => {
     }
   };
 
+  // 전화번호 자동 하이픈 포맷팅
+  const formatPhoneNumber = (value: string): string => {
+    // 숫자만 추출
+    const numbers = value.replace(/[^0-9]/g, '');
+
+    // 길이에 따라 포맷팅
+    if (numbers.length <= 3) {
+      return numbers;
+    } else if (numbers.length <= 7) {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3)}`;
+    } else if (numbers.length <= 10) {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3, 6)}-${numbers.slice(6)}`;
+    } else {
+      return `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`;
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
 
+    let newValue = value;
+
+    // 전화번호 필드인 경우 자동 포맷팅
+    if (name === 'phone') {
+      newValue = formatPhoneNumber(value);
+    }
+
     setForm(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : newValue,
     }));
   };
 
@@ -240,11 +264,11 @@ const ZeroWorldReservation: FC = () => {
                 name="phone"
                 value={form.phone}
                 onChange={handleChange}
-                placeholder="010-1234-5678"
+                placeholder="01012345678 또는 010-1234-5678"
                 required
-                pattern="[0-9]{2,3}-[0-9]{3,4}-[0-9]{4}"
+                maxLength={13}
               />
-              <p className="form-hint">하이픈(-)을 포함하여 입력해주세요</p>
+              <p className="form-hint">숫자만 입력하셔도 자동으로 하이픈이 추가됩니다</p>
             </div>
           </div>
 
