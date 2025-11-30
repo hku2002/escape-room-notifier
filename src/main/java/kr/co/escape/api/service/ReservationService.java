@@ -2,6 +2,7 @@ package kr.co.escape.api.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import kr.co.escape.api.dto.request.EarthEscapeReservationRequest;
 import kr.co.escape.api.dto.request.ReservationRequest;
 import kr.co.escape.api.dto.response.ReservationResponse;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,8 @@ public class ReservationService {
     private final ObjectMapper objectMapper;
     private static final String ZERO_WORLD_BASE_URL = "https://zerohongdae.com";
     private static final String RESERVATION_PATH = "/reservation";
+    private static final String EARTH_ESCAPE_BASE_URL = "https://www.xn--2e0b040a4xj.com";
+    private static final String EARTH_ESCAPE_RESERVATION_PATH = "/reservation";
 
     public ReservationResponse makeReservation(ReservationRequest request) {
         try {
@@ -222,6 +225,104 @@ public class ReservationService {
             return zdt.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("유효하지 않은 타임스탬프 형식입니다: " + timestamp, e);
+        }
+    }
+
+    /**
+     * 지구별 방탈출 예약 요청
+     * @param request 지구별 방탈출 예약 요청 정보
+     * @return 예약 결과
+     */
+    public ReservationResponse makeEarthEscapeReservation(EarthEscapeReservationRequest request) {
+        try {
+            // 1단계: /reservation 페이지에 접근하여 CSRF 토큰과 쿠키 획득
+            String reservationListUrl = EARTH_ESCAPE_BASE_URL + "/reservation";
+            String reservationCreateUrl = EARTH_ESCAPE_BASE_URL + EARTH_ESCAPE_RESERVATION_PATH;
+
+            log.info("Accessing Earth Escape reservation list page: {}", reservationListUrl);
+
+            // GET 요청으로 예약 목록 페이지 조회 (CSRF 토큰 획득)
+            ResponseData responseData = webClient.get()
+                    .uri(reservationListUrl)
+                    .header(HttpHeaders.USER_AGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                    .header(HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+                    .exchangeToMono(response -> {
+                        // 쿠키 추출
+                        List<String> cookies = response.headers().asHttpHeaders().get(HttpHeaders.SET_COOKIE);
+                        String cookieHeader = buildCookieHeader(cookies);
+
+                        return response.bodyToMono(String.class)
+                                .map(body -> new PageData(body, cookieHeader));
+                    })
+                    .map(pageData -> {
+                        // CSRF 토큰 추출
+                        String csrfToken = extractCsrfToken(pageData.html);
+                        if (csrfToken == null) {
+                            throw new RuntimeException("CSRF 토큰을 찾을 수 없습니다.");
+                        }
+                        log.info("Successfully extracted CSRF token");
+                        return new PageData(pageData.html, pageData.cookieHeader, csrfToken);
+                    })
+                    .flatMap(pageData -> {
+                        // 2단계: 예약 요청 전송
+                        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+                        formData.add("branch", request.getBranch());
+                        formData.add("theme", request.getTheme());
+                        formData.add("date", request.getDate());
+                        formData.add("time", request.getTime());
+                        formData.add("name", request.getName());
+                        formData.add("phone", request.getPhone());
+                        formData.add("people", request.getPeople());
+                        formData.add("payment_method", request.getPaymentMethod());
+                        formData.add("policy", request.isPolicy() ? "on" : "");
+                        formData.add("_token", pageData.csrfToken);  // Laravel CSRF 토큰 필드
+
+                        log.info("Sending POST request to: {}", reservationCreateUrl);
+                        log.info("CSRF Token: {}", pageData.csrfToken);
+                        log.info("Cookie: {}", pageData.cookieHeader);
+                        log.info("Form Data: {}", formData);
+
+                        return webClient.post()
+                                .uri(reservationCreateUrl)
+                                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                                .header(HttpHeaders.USER_AGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                                .header(HttpHeaders.ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+                                .header(HttpHeaders.REFERER, reservationListUrl)
+                                .header(HttpHeaders.ORIGIN, EARTH_ESCAPE_BASE_URL)
+                                .header(HttpHeaders.COOKIE, pageData.cookieHeader != null ? pageData.cookieHeader : "")
+                                .body(BodyInserters.fromFormData(formData))
+                                .exchangeToMono(response -> {
+                                    log.info("Response status: {}", response.statusCode());
+                                    log.info("Response headers: {}", response.headers().asHttpHeaders());
+
+                                    int statusCode = response.statusCode().value();
+
+                                    return response.bodyToMono(String.class)
+                                            .doOnNext(body -> log.info("Response body: {}", body))
+                                            .map(body -> new ResponseData(statusCode, body));
+                                });
+                    })
+                    .block();
+
+            // 응답이 없거나 HTTP 상태 코드가 200/302가 아니면 실패 처리
+            if (responseData == null) {
+                log.error("No response received from server");
+                return ReservationResponse.failure("서버로부터 응답을 받지 못했습니다.");
+            }
+
+            // 지구별 방탈출은 성공시 리다이렉트(302)를 반환할 수 있음
+            if (responseData.statusCode != 200 && responseData.statusCode != 302) {
+                log.warn("Reservation failed with status code: {}, body: {}", responseData.statusCode, responseData.body);
+                String errorMessage = extractErrorMessage(responseData.body);
+                return ReservationResponse.failure(errorMessage);
+            }
+
+            log.info("Earth Escape reservation successful: {}", responseData.body);
+            return ReservationResponse.success("예약이 완료되었습니다.", extractReservationId(responseData.body));
+
+        } catch (Exception e) {
+            log.error("Error making Earth Escape reservation", e);
+            return ReservationResponse.failure("예약 중 오류가 발생했습니다: " + e.getMessage());
         }
     }
 }

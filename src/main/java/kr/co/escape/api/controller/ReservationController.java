@@ -3,6 +3,7 @@ package kr.co.escape.api.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import kr.co.escape.api.dto.request.EarthEscapeReservationRequest;
 import kr.co.escape.api.dto.request.ReservationRequest;
 import kr.co.escape.api.dto.response.ApiResponse;
 import kr.co.escape.api.dto.response.ReservationResponse;
@@ -35,6 +36,26 @@ public class ReservationController {
                 request.getThemeId(), request.getReservationDate(), request.getName());
 
         ReservationResponse response = reservationService.makeReservation(request);
+
+        if (response.isSuccess()) {
+            return ApiResponse.success(response, "예약이 완료되었습니다.");
+        } else {
+            return ApiResponse.failure(response.getMessage());
+        }
+    }
+
+    @Operation(
+            summary = "지구별 방탈출 예약",
+            description = "지구별 방탈출 카페 테마를 예약합니다. 지점, 테마, 예약 날짜, 시간, 인원 등을 입력해야 합니다."
+    )
+    @PostMapping("/earth-escape")
+    public ApiResponse<ReservationResponse> createEarthEscapeReservation(
+            @Parameter(description = "지구별 방탈출 예약 요청 정보", required = true)
+            @RequestBody EarthEscapeReservationRequest request) {
+        log.info("Earth Escape reservation request received: branch={}, theme={}, date={}, time={}, name={}",
+                request.getBranch(), request.getTheme(), request.getDate(), request.getTime(), request.getName());
+
+        ReservationResponse response = reservationService.makeEarthEscapeReservation(request);
 
         if (response.isSuccess()) {
             return ApiResponse.success(response, "예약이 완료되었습니다.");
